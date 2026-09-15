@@ -6,8 +6,8 @@ pkgdesc="MX Linux skeleton fish shell configuration"
 arch=('any')
 license=('MIT')
 depends=()
-source=('fish.zip' 'org.kde.yakuake.desktop' 'conky.desktop')
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+source=('fish.zip' 'conky.desktop')
+sha256sums=('SKIP' 'SKIP')
 
 package() {
     cd "$srcdir"
@@ -28,6 +28,5 @@ package() {
     install -dm755 "$pkgdir/etc/skel/.config/autostart"
 
     # Install desktop files to autostart
-    install -m644 org.kde.yakuake.desktop "$pkgdir/etc/skel/.config/autostart/"
     install -m644 conky.desktop "$pkgdir/etc/skel/.config/autostart/"
 }
