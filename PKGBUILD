@@ -1,28 +1,35 @@
 # Maintainer: Adrian
 pkgname=mx-skel-fish-config
-pkgver=1.0.0
+pkgver=26.09
 pkgrel=1
 pkgdesc="MX Linux skeleton fish shell configuration"
 arch=('any')
+url='https://github.com/mxlinux'
 license=('MIT')
-depends=()
-source=('fish.zip' 'conky.desktop')
-sha256sums=('SKIP' 'SKIP')
+depends=('fish')
+optdepends=('mx-conky-data: provides the conky-startup.sh referenced by the autostart entry')
+source=('conky.desktop')
+sha256sums=('SKIP')
 
 package() {
     cd "$srcdir"
 
-    # Extract the zip file, overwriting without prompting
-    unzip -oq fish.zip
-
     # Create the target directory
     install -dm755 "$pkgdir/etc/skel/.config"
 
-    # Move the fish directory to the correct location
-    mv fish "$pkgdir/etc/skel/.config/"
+    # Install the fish configuration tree
+    cp -r "$startdir/fish" "$pkgdir/etc/skel/.config/"
 
-    # Set correct permissions for the fish directory
-    chmod 755 "$pkgdir/etc/skel/.config/fish"
+    # Normalise permissions regardless of the checkout's umask
+    find "$pkgdir/etc/skel/.config/fish" -type d -exec chmod 755 {} +
+    find "$pkgdir/etc/skel/.config/fish" -type f -exec chmod 644 {} +
+
+    # fish writes fish_variables 0600 and git cannot store that mode; restore it
+    chmod 600 "$pkgdir/etc/skel/.config/fish/fish_variables"
+
+    # git cannot track the empty themes/ dir, so create it explicitly; otherwise
+    # a local build (dir present on disk) and an OBS build would differ
+    install -dm755 "$pkgdir/etc/skel/.config/fish/themes"
 
     # Create autostart directory
     install -dm755 "$pkgdir/etc/skel/.config/autostart"

@@ -1,0 +1,65 @@
+# PKGBUILD for building on the Open Build Service.
+#
+# This package ships only as a prebuilt file on the MX-Arch ISO, so it can never
+# be updated on an installed system. It is not in AUR and has no committed source
+# tarball, so the OBS tar_scm service packs the checkout into one. OBS build VMs
+# have no network, so everything package() needs must come from that tarball.
+#
+# The repository-root PKGBUILD copies the tracked 'fish' directory from its own
+# directory ($startdir) and carries only 'conky.desktop' in the source array; on
+# OBS both arrive inside the tar_scm tarball, so this file copies them from the
+# unpacked checkout instead.
+#
+# This repository has NO debian/changelog, so pkgver is taken from the
+# repository-root PKGBUILD (26.09) and must be bumped by hand here whenever the
+# root PKGBUILD changes. The usual "pkgver tracks debian/changelog" rule does not
+# apply, which also means the obs fish function cannot sync it.
+
+# Maintainer: Adrian
+pkgname=mx-skel-fish-config
+pkgver=26.09
+pkgrel=1
+pkgdesc="MX Linux skeleton fish shell configuration"
+arch=('any')
+url='https://github.com/mxlinux'
+license=('MIT')
+depends=('fish')
+optdepends=('mx-conky-data: provides the conky-startup.sh referenced by the autostart entry')
+
+# NOTE: tar_scm names the tarball after the REPOSITORY (mx-skel-arch), not after
+# pkgname (mx-skel-fish-config), so the name below deliberately does not match
+# ${pkgname}. Do not "fix" it to ${pkgname}-source.tar.
+source=("mx-skel-arch-source.tar")
+sha256sums=('SKIP')
+
+# tar_scm unpacks to <repository>-<versionformat>; both are fixed here.
+_srcdir="mx-skel-arch-source"
+md5sums=()
+PKGEXT='.pkg.tar.zst'
+
+package() {
+    cd "${srcdir}/${_srcdir}"
+
+    # Create the target directory
+    install -dm755 "$pkgdir/etc/skel/.config"
+
+    # Install the fish configuration tree
+    cp -r fish "$pkgdir/etc/skel/.config/"
+
+    # Normalise permissions regardless of the checkout's umask
+    find "$pkgdir/etc/skel/.config/fish" -type d -exec chmod 755 {} +
+    find "$pkgdir/etc/skel/.config/fish" -type f -exec chmod 644 {} +
+
+    # fish writes fish_variables 0600 and git cannot store that mode; restore it
+    chmod 600 "$pkgdir/etc/skel/.config/fish/fish_variables"
+
+    # git cannot track the empty themes/ dir, so create it explicitly; otherwise
+    # a local build (dir present on disk) and an OBS build would differ
+    install -dm755 "$pkgdir/etc/skel/.config/fish/themes"
+
+    # Create autostart directory
+    install -dm755 "$pkgdir/etc/skel/.config/autostart"
+
+    # Install desktop files to autostart
+    install -m644 conky.desktop "$pkgdir/etc/skel/.config/autostart/"
+}
